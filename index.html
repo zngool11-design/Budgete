@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Mizan">
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,6 +173,14 @@ h1{font-size:32px;margin:0;font-weight:700}
 .lv{white-space:nowrap;font-size:15px}
 .lb{height:12px;margin:10px 0 6px;display:flex}
 .ls{font-size:12px;color:var(--muted)}
+.bhead{display:flex;align-items:center;gap:8px}
+.bhead h3{flex:1;margin:0}
+.dpill{display:inline-block;margin-top:6px;background:var(--tint);color:var(--p2);border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.editb{box-shadow:none;background:var(--soft);padding:7px 11px}
+.bsum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.bsum>div{background:var(--soft);border-radius:14px;padding:10px 8px;text-align:center;min-width:0}
+.bsum>div>small{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.bsum b{font-size:15px;display:block;overflow:hidden;text-overflow:ellipsis}
 .monthbar .lbl{font:inherit;font-weight:600}
 @media (max-width:380px){.hero .big{font-size:32px}h1{font-size:28px}.day{min-height:58px}}
 </style>
@@ -191,7 +201,10 @@ const parse=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
 const todayISO=()=>iso(new Date());
 const dim=(y,m)=>new Date(y,m+1,0).getDate();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=s=>{s=String(s??'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٫,]/g,'.').replace(/[^\d.]/g,'');const n=parseFloat(s);return isFinite(n)?n:0};
+// Parses "12.5", "١٢٫٥", "AED 1,234.50", "12,5" → number
+const num=s=>{s=String(s??'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g,'.').replace(/٬/g,',');
+ s=s.includes('.')||/,\d{3}(\D|$)/.test(s)?s.replace(/,/g,''):s.replace(/,/g,'.');
+ const n=parseFloat(s.replace(/[^\d.]/g,''));return isFinite(n)?n:0};
 
 const L={
  ar:{home:'الرئيسية',savings:'الادخار',calendar:'التقويم',stats:'الإحصائيات',settings:'الإعدادات',
@@ -209,7 +222,13 @@ const L={
   data:'البيانات',exportD:'تصدير نسخة احتياطية',importD:'استيراد نسخة احتياطية',reset:'مسح كل البيانات',resetQ:'هل تريد حذف كل البيانات نهائيًا؟',
   imported:'تم الاستيراد',badFile:'ملف غير صالح',savedT:'تم الحفظ',about:'حول',aboutTxt:'كل بياناتك محفوظة على جهازك فقط. صدّر نسخة احتياطية بانتظام.',
   newCategory:'فئة جديدة',ownEmoji:'اكتب أي إيموجي من الكيبورد',name:'الاسم',icon:'الرمز',newWallet:'محفظة جديدة',delWalletQ:'حذف المحفظة وكل معاملاتها؟',delQ:'حذف؟',delCatQ:'حذف الفئة؟ ستبقى المعاملات بدون فئة.',
-  budgetUsed:'من الميزانية',leftToSpend:'المتبقي من الميزانية',inCur:'بعملة',spent:'صرفت',noBudgetsHint:'لم تحدد ميزانيات بعد — اضغط هنا لتحديد ميزانية لكل فئة',
+  cloud:'الحساب والمزامنة',cloudWhy:'سجّل الدخول لحفظ بياناتك في السحابة، ولإضافة مدفوعات Apple Pay تلقائيًا.',email:'البريد الإلكتروني',password:'كلمة المرور (6 أحرف على الأقل)',
+  signIn:'تسجيل الدخول',signUp:'إنشاء حساب',signOut:'تسجيل الخروج',signOutQ:'تسجيل الخروج؟ ستبقى نسخة من بياناتك على هذا الجهاز.',authFill:'اكتب البريد وكلمة مرور من 6 أحرف على الأقل',
+  confirmEmail:'افتح بريدك واضغط رابط التأكيد، ثم ارجع وسجّل الدخول',synced:'✅ محفوظة في السحابة',syncingT:'⏳ جارٍ المزامنة…',offlineT:'📴 بدون إنترنت — ستتم المزامنة عند الاتصال',syncErr:'⚠️ تعذرت المزامنة، اضغط "مزامنة الآن"',
+  syncNow:'مزامنة الآن',applePay:'إضافة Apple Pay تلقائيًا',applePayHelp:'استخدم هذه القيم في إجراء "الحصول على محتويات URL" داخل أتمتة الاختصارات. اضغط "نسخ" لكل قيمة.',
+  copy:'نسخ',copied:'تم النسخ',newToken:'تغيير الرمز السري',newTokenQ:'سيتوقف الاختصار الحالي عن العمل حتى تضع الرمز الجديد فيه. متابعة؟',
+  chooseCloud:'يوجد بيانات في السحابة وبيانات أخرى على هذا الجهاز.\n\nموافق = استخدام بيانات السحابة\nإلغاء = رفع بيانات هذا الجهاز بدلًا منها',
+  budgetUsed:'من الميزانية',leftToSpend:'المتبقي من الميزانية',autoAdded:'تمت إضافة',totalBudgets:'مجموع الميزانيات',spentB:'المصروف',remainingB:'المتبقي',inCur:'بعملة',spent:'صرفت',noBudgetsHint:'لم تحدد ميزانيات بعد — اضغط هنا لتحديد ميزانية لكل فئة',
   periodStart:'بداية الشهر المالي',currentPeriod:'الفترة الحالية',salaryToday:'نزل الراتب اليوم — ابدأ فترة جديدة',salaryQ:(a,b)=>`ستبدأ فترة جديدة من ${a} إلى ${b}، وتتصفر كل الميزانيات. متابعة؟`,thisPeriodStart:'بداية هذه الفترة',defaultDay:'يوم البداية المعتاد',
   periodHelp:'عند الضغط على "نزل الراتب اليوم" تتصفر كل الميزانيات وتبدأ فترة جديدة من اليوم حتى نهاية الشهر الذي بعده، أو حتى تضغط الزر مرة أخرى عند نزول الراتب التالي.',resetPeriod:'إلغاء بداية هذه الفترة',recNote:'معاملة متكررة — التعديل يطبق على كل التكرارات',noCat:'بدون فئة',add:'إضافة',
   themes:{teal:'فيروزي الجني',blue:'أزرق المحيط',violet:'بنفسجي',amber:'كهرماني',rose:'وردي',green:'أخضر'}},
@@ -227,7 +246,13 @@ const L={
   data:'Data',exportD:'Export backup',importD:'Import backup',reset:'Erase all data',resetQ:'Permanently delete all data?',
   imported:'Imported',badFile:'Invalid file',savedT:'Saved',about:'About',aboutTxt:'All your data stays on this device. Export a backup regularly.',
   newCategory:'New category',ownEmoji:'Type any emoji from the keyboard',name:'Name',icon:'Icon',newWallet:'New wallet',delWalletQ:'Delete this wallet and all its transactions?',delQ:'Delete?',delCatQ:'Delete category? Its transactions will become uncategorized.',
-  budgetUsed:'of budget',leftToSpend:'Budget left to spend',inCur:'In',spent:'Spent',noBudgetsHint:'No budgets yet — tap to set a budget per category',
+  cloud:'Account & sync',cloudWhy:'Sign in to keep your data in the cloud and add Apple Pay payments automatically.',email:'Email',password:'Password (at least 6 characters)',
+  signIn:'Sign in',signUp:'Create account',signOut:'Sign out',signOutQ:'Sign out? A copy of your data stays on this device.',authFill:'Enter your email and a password of at least 6 characters',
+  confirmEmail:'Open your email and tap the confirmation link, then come back and sign in',synced:'✅ Saved in the cloud',syncingT:'⏳ Syncing…',offlineT:'📴 Offline — will sync when connected',syncErr:'⚠️ Sync failed, tap "Sync now"',
+  syncNow:'Sync now',applePay:'Auto-add Apple Pay',applePayHelp:'Use these values in the "Get Contents of URL" action of your Shortcuts automation. Tap "Copy" for each one.',
+  copy:'Copy',copied:'Copied',newToken:'Change secret token',newTokenQ:'Your current shortcut stops working until you put the new token in it. Continue?',
+  chooseCloud:'There is data in the cloud and different data on this device.\n\nOK = use the cloud data\nCancel = upload this device\'s data instead',
+  budgetUsed:'of budget',leftToSpend:'Budget left to spend',autoAdded:'Added',totalBudgets:'Total budgets',spentB:'Spent',remainingB:'Remaining',inCur:'In',spent:'Spent',noBudgetsHint:'No budgets yet — tap to set a budget per category',
   periodStart:'Budget month start',currentPeriod:'Current period',salaryToday:'Salary arrived today — start new period',salaryQ:(a,b)=>`A new period will run from ${a} to ${b} and all budgets restart from zero. Continue?`,thisPeriodStart:'This period starts',defaultDay:'Usual start day',
   periodHelp:'"Salary arrived today" resets all budgets and starts a new period from today until the end of next month, or until you tap it again when the next salary arrives.',resetPeriod:'Remove this period start',recNote:'Recurring — edits apply to every occurrence',noCat:'Uncategorized',add:'Add',
   themes:{teal:'Genie teal',blue:'Ocean blue',violet:'Violet',amber:'Amber',rose:'Rose',green:'Green'}}
@@ -251,7 +276,8 @@ function migrate(s){
  s.salaryStarts=[...new Set([...(s.salaryStarts||[]),...Object.values(s.periodStarts||{})])].sort();delete s.periodStarts;
  s.settings.startDay=s.settings.startDay||1;return s}
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.settings&&Array.isArray(s.tx))return migrate(s)}catch(e){}return migrate(defaults())}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('⚠️ storage')}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('⚠️ storage')}}
+function save(){S.updated=Date.now();persist();schedulePush()}
 
 let S=load();
 let tab='home';const now=new Date();let view={y:now.getFullYear(),m:now.getMonth()}; /* calendar month */
@@ -350,7 +376,12 @@ function renderHome(){
  let h=`<div class="top"><div class="brand"><div class="logo">⚖︎</div>${S.settings.lang==='ar'?'ميزان':'Mizan'}</div>${walletPill()}</div>${monthBar()}
  <div class="hero"><div class="t">${T.balance}</div><div class="big">${money(inc-exp,inc-exp<0?'-':'')}</div>
  <div class="row"><div><div class="t">↘ ${T.expenses}</div><div class="v">${money(exp)}</div></div><div><div class="t">↗ ${T.income}</div><div class="v">${money(inc)}</div></div></div></div>`;
- h+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div><h3>${T.leftToSpend}</h3><div class="muted">${T.inCur} ${S.settings.currency}${dl!=null?' · '+T.daysLeft(dl):''}</div></div><button class="pillbtn" style="box-shadow:none;background:var(--soft);padding:8px 12px" data-a="catBudgets" aria-label="${T.catBudgets}">✏️</button></div><div class="hr" style="margin:12px 0 4px"></div>`;
+ const totB=budgeted.reduce((s,c)=>s+b.cats[c.id],0),spB=budgeted.reduce((s,c)=>s+(g[c.id]?g[c.id].total:0),0),remB=totB-spB;
+ h+=`<div class="card"><div class="bhead"><h3>${T.leftToSpend}</h3><button class="pillbtn editb" data-a="catBudgets" aria-label="${T.catBudgets}">✏️</button></div>${dl!=null?`<span class="dpill">⏳ ${T.daysLeft(dl)}</span>`:''}`;
+ if(totB>0)h+=`<div class="bsum"><div><small>${T.totalBudgets}</small><b>${money(totB)}</b></div><div><small>${T.spentB}</small><b class="red">${money(spB)}</b></div><div><small>${T.remainingB}</small><b class="${remB<0?'red':'green'}">${money(remB,remB<0?'-':'')}</b></div></div>
+  <div class="bar" style="height:10px;margin-top:12px"><i style="width:${Math.min(100,spB/totB*100)}%;background:${remB<0?'var(--red)':spB/totB>.8?'var(--orange)':'var(--p1)'}"></i></div>
+  <div class="ls" style="margin-top:6px">${nf(Math.round(spB/totB*100),0)}% ${T.budgetUsed}</div>`;
+ h+=`<div class="hr" style="margin:12px 0 4px"></div>`;
  if(b.monthly>0)h+=leftRow('💳',T.monthBudget,exp,b.monthly,list.filter(x=>x.type==='expense').length,'monthBudget');
  for(const c of budgeted){const v=g[c.id]||{total:0,count:0};h+=leftRow(c.emoji,catName(c),v.total,b.cats[c.id],v.count,'catTx',c.id)}
  if(!budgeted.length&&!(b.monthly>0))h+=`<button class="lrow muted" data-a="catBudgets" style="text-align:center;padding:16px 0">🎯 ${T.noBudgetsHint}</button>`;
@@ -428,7 +459,7 @@ function renderStats(){
 function renderSettings(){
  const T=t(),s=S.settings,{inc,exp}=sums(txInPeriod(pv)),b=budget(),c=CUR[s.currency]||CUR.AED;
  const row=(a,l,r)=>`<button class="srow" data-a="${a}"><span class="l">${l}</span><span class="r">${r}</span></button>`;
- return `<div class="top"><h1>${T.settings}</h1></div>
+ return `<div class="top"><h1>${T.settings}</h1></div>${cloudCard()}
  <div class="card"><h3>${T.prefs}</h3>
  ${row('theme',T.theme,`<span class="dotc" style="background:${THEMES[s.theme][1]};width:22px;height:22px"></span>${T.themes[s.theme]} ${chevNext()}`)}
  <div class="srow"><span class="l">${T.dark}</span><button class="tog ${s.dark?'on':''}" data-a="dark" aria-label="${T.dark}"></button></div>
@@ -640,10 +671,127 @@ document.getElementById('app').onclick=e=>{
   case 'export':return exportData();
   case 'import':return document.getElementById('importFile').click();
   case 'reset':if(confirm(T.resetQ)){S=migrate(defaults());pv=curPeriod();commit()}return;
+  case 'signin':return cloudAuth('signin');
+  case 'signup':return cloudAuth('signup');
+  case 'syncNow':return cloudSync();
+  case 'applePay':return applePaySheet();
+  case 'signout':if(confirm(T.signOutQ)){clearTimeout(pushTimer);CLOUD.auth.signOut()}return;
  }
 };
+/* Auto-add from a link, e.g. an iOS Shortcuts automation after an Apple Pay payment:
+   ?add=expense&amount=AED 12.50&merchant=Starbucks
+   The category is copied from the last transaction with the same merchant, otherwise "Other". */
+function addPayment(type,amount,note,date){
+ const prev=note&&[...S.tx].reverse().find(x=>x.type===type&&(x.note||'').toLowerCase()===note.toLowerCase());
+ const other=S.categories.find(c=>c.type===type&&c.name&&/^Other/.test(c.name.en||''))||S.categories.find(c=>c.type===type)||{};
+ S.tx.push({id:uid(),wallet:S.active,type,amount:Math.round(amount*1000)/1000,cat:prev?prev.cat:other.id,date,note,rec:'none',auto:Date.now()});
+}
+function addFromLink(){
+ const q=new URLSearchParams(location.search);if(!q.has('add'))return;
+ history.replaceState(null,'',location.pathname);
+ const T=t(),type=q.get('add')==='income'?'income':'expense',amount=num(q.get('amount')),note=(q.get('merchant')||q.get('note')||'').trim(),stamp=Date.now();
+ if(!(amount>0))return setTimeout(()=>toast(T.amountErr),300);
+ if(S.tx.some(x=>x.auto&&stamp-x.auto<120000&&x.amount===amount&&x.note===note))return; // same payment opened twice
+ addPayment(type,amount,note,todayISO());
+ save();setTimeout(()=>toast(`✅ ${T.autoAdded} ${nf(amount)}${note?' · '+note:''}`),300);
+}
+
+/* ---------- cloud sync (Supabase) ----------
+   The whole state is one JSON row per user (table app_state); the newer copy (S.updated) wins.
+   Apple Pay payments arrive in table inbox through the add_payment function and are moved into S on sync. */
+const CFG=window.MIZAN_CLOUD||{};
+const CLOUD=CFG.url&&!/YOUR-/.test(CFG.url+CFG.key)&&window.supabase?window.supabase.createClient(CFG.url,CFG.key):null;
+let cloudUser=null,cloudState=CLOUD?'signedout':'off',pushTimer=null,syncing=null;
+const setCloud=st=>{cloudState=st;if(tab==='settings')render()};
+const failState=()=>navigator.onLine?'error':'offline';
+async function cloudPush(){
+ const {error}=await CLOUD.from('app_state').upsert({user_id:cloudUser.id,data:S,updated_at:new Date().toISOString()});
+ if(error)throw error;
+}
+function schedulePush(){
+ if(!CLOUD||!cloudUser)return;clearTimeout(pushTimer);
+ pushTimer=setTimeout(async()=>{setCloud('syncing');try{await cloudPush();setCloud('ok')}catch(e){console.warn(e);setCloud(failState())}},800);
+}
+async function pullInbox(){
+ const {data,error}=await CLOUD.from('inbox').select('*').order('id');
+ if(error)throw error;if(!data.length)return;
+ for(const r of data){const a=num(r.amount);if(a>0)addPayment(r.kind==='income'?'income':'expense',a,(r.merchant||'').trim(),iso(new Date(r.created_at)))}
+ persist();await cloudPush(); // store the new transactions before removing them from the inbox
+ const {error:e2}=await CLOUD.from('inbox').delete().in('id',data.map(r=>r.id));if(e2)throw e2;
+ toast(`✅ ${t().autoAdded} ${nf(data.length,0)} Apple Pay`);
+}
+function cloudSync(){
+ if(!CLOUD||!cloudUser)return Promise.resolve();
+ if(syncing)return syncing;
+ return syncing=(async()=>{
+  setCloud('syncing');
+  try{
+   const {data,error}=await CLOUD.from('app_state').select('data').eq('user_id',cloudUser.id).maybeSingle();
+   if(error)throw error;
+   const remote=data&&data.data,first=S.syncedUid!==cloudUser.id;
+   let useRemote=remote&&(remote.updated||0)>(S.updated||0);
+   // first sign-in on a device that already has its own transactions: let the user pick
+   if(remote&&first&&S.tx.length)useRemote=confirm(t().chooseCloud);
+   if(useRemote){S=migrate(remote);pv=curPeriod()}
+   S.syncedUid=cloudUser.id;
+   if(!useRemote){S.updated=Date.now();await cloudPush()}
+   persist();
+   await pullInbox();
+   cloudState='ok';
+  }catch(e){console.warn(e);cloudState=failState()}
+  syncing=null;render();
+ })();
+}
+async function cloudInit(){
+ if(!CLOUD)return;
+ const {data}=await CLOUD.auth.getSession();cloudUser=data.session?data.session.user:null;
+ CLOUD.auth.onAuthStateChange((_e,s)=>{const u=s?s.user:null,changed=(u&&u.id)!==(cloudUser&&cloudUser.id);cloudUser=u;if(!u)cloudState='signedout';if(changed){if(u)cloudSync();else render()}});
+ if(cloudUser)cloudSync();else render();
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')cloudSync()});
+ addEventListener('online',()=>cloudSync());
+}
+async function cloudAuth(kind){
+ const T=t(),email=(document.getElementById('ce').value||'').trim(),password=document.getElementById('cp').value||'';
+ if(!email||password.length<6)return toast(T.authFill);
+ setCloud('syncing');
+ const {data,error}=kind==='signup'?await CLOUD.auth.signUp({email,password}):await CLOUD.auth.signInWithPassword({email,password});
+ if(error){cloudState='signedout';render();return toast('⚠️ '+error.message)}
+ if(kind==='signup'&&!data.session){cloudState='signedout';render();return toast(T.confirmEmail)}
+}
+async function applePaySheet(){
+ const T=t();
+ let {data}=await CLOUD.from('inbox_tokens').select('token').maybeSingle();
+ if(!data){const r=await CLOUD.from('inbox_tokens').insert({}).select('token').single();if(r.error)return toast('⚠️ '+r.error.message);data=r.data}
+ const url=CFG.url.replace(/\/$/,'')+'/rest/v1/rpc/add_payment';
+ const field=(label,val,id)=>`<div class="bcard"><div class="head" style="margin-bottom:8px">${label}</div><div class="ain" style="font-size:13px;word-break:break-all"><code id="${id}" style="flex:1">${esc(val)}</code><button class="pillbtn" data-copy="${id}" style="box-shadow:none;color:var(--p2)">${T.copy}</button></div></div>`;
+ sheet({title:T.applePay,hideDone:true,body:`<p class="muted" style="margin:0 4px 12px">${T.applePayHelp}</p>
+  ${field('1 · URL',url,'u1')}${field('2 · Header: apikey',CFG.key,'u2')}${field('3 · JSON: p_token',data.token,'u3')}
+  <div class="bcard"><div class="head" style="margin-bottom:6px">4 · JSON</div><div class="muted" style="font-size:14px;direction:ltr;text-align:left">p_amount → Amount<br>p_merchant → Merchant</div></div>
+  <button class="bigbtn ghost" id="nt">${T.newToken}</button>`,
+  open(ov,close){
+   ov.querySelector('.shb').addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;try{await navigator.clipboard.writeText(ov.querySelector('#'+b.dataset.copy).textContent);toast(T.copied)}catch(_){}});
+   ov.querySelector('#nt').onclick=async()=>{if(!confirm(T.newTokenQ))return;await CLOUD.from('inbox_tokens').delete().eq('user_id',cloudUser.id);close();applePaySheet()};
+  }});
+}
+function cloudCard(){
+ const T=t();if(!CLOUD)return '';
+ if(!cloudUser)return `<div class="card"><h3>☁️ ${T.cloud}</h3><p class="muted" style="margin:4px 0 12px">${T.cloudWhy}</p>
+  <div class="form" style="background:var(--soft)"><div class="frow"><span class="ic">✉️</span><input type="text" class="wide" id="ce" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="${T.email}" style="text-align:start"></div>
+  <div class="frow"><span class="ic">🔑</span><input type="password" class="wide" id="cp" autocomplete="current-password" placeholder="${T.password}" style="text-align:start;background:transparent;flex:1;max-width:none"></div></div>
+  <div style="display:flex;gap:10px"><button class="bigbtn" data-a="signin">${T.signIn}</button><button class="bigbtn" data-a="signup" style="background:var(--card);color:var(--p2);border:2px solid var(--p1)">${T.signUp}</button></div></div>`;
+ const st={ok:T.synced,syncing:T.syncingT,offline:T.offlineT,error:T.syncErr}[cloudState]||'';
+ const row=(a,l,r)=>`<button class="srow" data-a="${a}"><span class="l">${l}</span><span class="r">${r}</span></button>`;
+ return `<div class="card"><h3>☁️ ${T.cloud}</h3>
+  <div class="srow"><span class="l"><span class="tile t">👤</span><span>${esc(cloudUser.email)}<br><small class="muted">${st}</small></span></span></div>
+  ${row('syncNow',`<span class="tile t">🔄</span>${T.syncNow}`,'')}
+  ${row('applePay',`<span class="tile t">💳</span>${T.applePay}`,chevNext())}
+  ${row('signout',`<span class="tile" style="background:color-mix(in srgb,var(--red) 12%,transparent)">🚪</span><span class="red">${T.signOut}</span>`,'')}</div>`;
+}
+
+addFromLink();
 pv=curPeriod();
 render();
+cloudInit();
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
