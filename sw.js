@@ -1,5 +1,5 @@
 // Network first so updates show up immediately; the cache is only a fallback for offline use.
-const VERSION = 'mizan-v8';
+const VERSION = 'mizan-v10';
 const SHELL = ['./', 'index.html', 'config.js', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

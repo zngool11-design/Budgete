@@ -225,8 +225,9 @@ const L={
   cloud:'الحساب والمزامنة',cloudWhy:'سجّل الدخول لحفظ بياناتك في السحابة، ولإضافة مدفوعات Apple Pay تلقائيًا.',email:'البريد الإلكتروني',password:'كلمة المرور (6 أحرف على الأقل)',
   signIn:'تسجيل الدخول',signUp:'إنشاء حساب',signOut:'تسجيل الخروج',signOutQ:'تسجيل الخروج؟ ستبقى نسخة من بياناتك على هذا الجهاز.',authFill:'اكتب البريد وكلمة مرور من 6 أحرف على الأقل',
   confirmEmail:'افتح بريدك واضغط رابط التأكيد، ثم ارجع وسجّل الدخول',synced:'✅ محفوظة في السحابة',syncingT:'⏳ جارٍ المزامنة…',offlineT:'📴 بدون إنترنت — ستتم المزامنة عند الاتصال',syncErr:'⚠️ تعذرت المزامنة، اضغط "مزامنة الآن"',
-  syncNow:'مزامنة الآن',applePay:'إضافة Apple Pay تلقائيًا',applePayHelp:'استخدم هذه القيم في إجراء "الحصول على محتويات URL" داخل أتمتة الاختصارات. اضغط "نسخ" لكل قيمة.',
-  copy:'نسخ',copied:'تم النسخ',newToken:'تغيير الرمز السري',newTokenQ:'سيتوقف الاختصار الحالي عن العمل حتى تضع الرمز الجديد فيه. متابعة؟',
+  syncNow:'مزامنة الآن',applePay:'إضافة المدفوعات تلقائيًا من رسائل البنك',applePayHelp:'استخدم هذه القيم في إجراء "الحصول على محتويات URL" داخل أتمتة "رسالة" في الاختصارات. اضغط "نسخ" لكل قيمة.',
+  smsTest:'جرّب: الصق رسالة من البنك هنا',smsNotTx:'لم يتم التعرف على معاملة في هذه الرسالة',
+  copy:'نسخ',copied:'تم النسخ',emptyPay:'وصل طلب من الاختصار بدون مبلغ (تشغيل يدوي؟) — تم تجاهله',newToken:'تغيير الرمز السري',newTokenQ:'سيتوقف الاختصار الحالي عن العمل حتى تضع الرمز الجديد فيه. متابعة؟',
   chooseCloud:'يوجد بيانات في السحابة وبيانات أخرى على هذا الجهاز.\n\nموافق = استخدام بيانات السحابة\nإلغاء = رفع بيانات هذا الجهاز بدلًا منها',
   budgetUsed:'من الميزانية',leftToSpend:'المتبقي من الميزانية',autoAdded:'تمت إضافة',totalBudgets:'مجموع الميزانيات',spentB:'المصروف',remainingB:'المتبقي',inCur:'بعملة',spent:'صرفت',noBudgetsHint:'لم تحدد ميزانيات بعد — اضغط هنا لتحديد ميزانية لكل فئة',
   periodStart:'بداية الشهر المالي',currentPeriod:'الفترة الحالية',salaryToday:'نزل الراتب اليوم — ابدأ فترة جديدة',salaryQ:(a,b)=>`ستبدأ فترة جديدة من ${a} إلى ${b}، وتتصفر كل الميزانيات. متابعة؟`,thisPeriodStart:'بداية هذه الفترة',defaultDay:'يوم البداية المعتاد',
@@ -249,8 +250,9 @@ const L={
   cloud:'Account & sync',cloudWhy:'Sign in to keep your data in the cloud and add Apple Pay payments automatically.',email:'Email',password:'Password (at least 6 characters)',
   signIn:'Sign in',signUp:'Create account',signOut:'Sign out',signOutQ:'Sign out? A copy of your data stays on this device.',authFill:'Enter your email and a password of at least 6 characters',
   confirmEmail:'Open your email and tap the confirmation link, then come back and sign in',synced:'✅ Saved in the cloud',syncingT:'⏳ Syncing…',offlineT:'📴 Offline — will sync when connected',syncErr:'⚠️ Sync failed, tap "Sync now"',
-  syncNow:'Sync now',applePay:'Auto-add Apple Pay',applePayHelp:'Use these values in the "Get Contents of URL" action of your Shortcuts automation. Tap "Copy" for each one.',
-  copy:'Copy',copied:'Copied',newToken:'Change secret token',newTokenQ:'Your current shortcut stops working until you put the new token in it. Continue?',
+  syncNow:'Sync now',applePay:'Auto-add payments from bank SMS',applePayHelp:'Use these values in the "Get Contents of URL" action of a "Message" automation in Shortcuts. Tap "Copy" for each one.',
+  smsTest:'Try it: paste a bank message here',smsNotTx:'No transaction found in this message',
+  copy:'Copy',copied:'Copied',emptyPay:'The shortcut sent a request without an amount (run by hand?) — ignored',newToken:'Change secret token',newTokenQ:'Your current shortcut stops working until you put the new token in it. Continue?',
   chooseCloud:'There is data in the cloud and different data on this device.\n\nOK = use the cloud data\nCancel = upload this device\'s data instead',
   budgetUsed:'of budget',leftToSpend:'Budget left to spend',autoAdded:'Added',totalBudgets:'Total budgets',spentB:'Spent',remainingB:'Remaining',inCur:'In',spent:'Spent',noBudgetsHint:'No budgets yet — tap to set a budget per category',
   periodStart:'Budget month start',currentPeriod:'Current period',salaryToday:'Salary arrived today — start new period',salaryQ:(a,b)=>`A new period will run from ${a} to ${b} and all budgets restart from zero. Continue?`,thisPeriodStart:'This period starts',defaultDay:'Usual start day',
@@ -686,6 +688,24 @@ function addPayment(type,amount,note,date){
  const other=S.categories.find(c=>c.type===type&&c.name&&/^Other/.test(c.name.en||''))||S.categories.find(c=>c.type===type)||{};
  S.tx.push({id:uid(),wallet:S.active,type,amount:Math.round(amount*1000)/1000,cat:prev?prev.cat:other.id,date,note,rec:'none',auto:Date.now()});
 }
+/* Reads a bank SMS such as (ADIB):
+   "Transaction of AED 2.00 debited from your a/c *296 at TLR*DARALBER      DU BAI AE. Avl Bal is AED 15571.06"
+   → {type:'expense', amount:2, merchant:'DARALBER'}. Returns null for messages that are not transactions. */
+const SMS_CUR='AED|SAR|USD|EUR|GBP|KWD|QAR|BHD|OMR|EGP|JOD|INR|درهم|د\\.إ';
+function parseBankSms(text){
+ let s=String(text||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/٫/g,'.');
+ s=s.split(/Avl\.?\s*Bal|Available\s+Bal|Avail\.?\s*Bal|الرصيد/i)[0]; // ignore the balance part
+ if(!/debit|credit|purchase|spent|withdraw|paid|payment|transaction|خصم|شراء|سحب|إيداع|ايداع|دفع/i.test(s))return null;
+ if(/\bOTP\b|one[- ]time|passcode|verification code|declined|failed|unsuccessful|rejected|رمز التحقق|كلمة المرور|مرفوضة|فشلت/i.test(s))return null;
+ const m=s.match(new RegExp('(?:'+SMS_CUR+')\\s*([\\d,]+(?:\\.\\d+)?)','i'))||s.match(new RegExp('([\\d,]+(?:\\.\\d+)?)\\s*(?:'+SMS_CUR+')','i'));
+ const amount=m?num(m[1]):0;if(!(amount>0))return null;
+ const income=/credited|deposit|received|refund|إيداع|ايداع|استرداد/i.test(s)&&!/debited/i.test(s);
+ const mm=s.match(/\b(?:at|to)\s+(.+?)(?:\s{2,}|\s+[A-Z]{2}\.|\.\s|\.$|$)/i)||s.match(/(?:لدى|في)\s+(.+?)(?:\s{2,}|\.|$)/);
+ let merchant=mm?mm[1].replace(/\s+/g,' ').trim():'';
+ if(/^(your|a\/c|account)\b/i.test(merchant))merchant=''; // "credited to your a/c" has no merchant
+ merchant=merchant.replace(/^[A-Z0-9]{2,4}\*\s*/,''); // card processor prefix, e.g. "TLR*DARALBER"
+ return {type:income?'income':'expense',amount,merchant};
+}
 function addFromLink(){
  const q=new URLSearchParams(location.search);if(!q.has('add'))return;
  history.replaceState(null,'',location.pathname);
@@ -715,10 +735,15 @@ function schedulePush(){
 async function pullInbox(){
  const {data,error}=await CLOUD.from('inbox').select('*').order('id');
  if(error)throw error;if(!data.length)return;
- for(const r of data){const a=num(r.amount);if(a>0)addPayment(r.kind==='income'?'income':'expense',a,(r.merchant||'').trim(),iso(new Date(r.created_at)))}
- persist();await cloudPush(); // store the new transactions before removing them from the inbox
+ // rows without an amount (shortcut run by hand) and SMS that are not transactions (OTP, ads) are dropped
+ let added=0,empty=0;
+ for(const r of data){
+  const p=r.kind==='sms'?parseBankSms(r.merchant):{type:r.kind==='income'?'income':'expense',amount:num(r.amount),merchant:(r.merchant||'').trim()};
+  if(p&&p.amount>0){addPayment(p.type,p.amount,p.merchant,iso(new Date(r.created_at)));added++}else if(r.kind!=='sms')empty++;
+ }
+ if(added){persist();await cloudPush()} // store the new transactions before removing them from the inbox
  const {error:e2}=await CLOUD.from('inbox').delete().in('id',data.map(r=>r.id));if(e2)throw e2;
- toast(`✅ ${t().autoAdded} ${nf(data.length,0)} Apple Pay`);
+ if(added)toast(`✅ ${t().autoAdded} ${nf(added,0)}`);else if(empty)toast(`⚠️ ${t().emptyPay}`);
 }
 function cloudSync(){
  if(!CLOUD||!cloudUser)return Promise.resolve();
@@ -762,13 +787,15 @@ async function applePaySheet(){
  const T=t();
  let {data}=await CLOUD.from('inbox_tokens').select('token').maybeSingle();
  if(!data){const r=await CLOUD.from('inbox_tokens').insert({}).select('token').single();if(r.error)return toast('⚠️ '+r.error.message);data=r.data}
- const url=CFG.url.replace(/\/$/,'')+'/rest/v1/rpc/add_payment';
+ const url=CFG.url.replace(/\/$/,'')+'/rest/v1/rpc/add_sms';
  const field=(label,val,id)=>`<div class="bcard"><div class="head" style="margin-bottom:8px">${label}</div><div class="ain" style="font-size:13px;word-break:break-all"><code id="${id}" style="flex:1">${esc(val)}</code><button class="pillbtn" data-copy="${id}" style="box-shadow:none;color:var(--p2)">${T.copy}</button></div></div>`;
  sheet({title:T.applePay,hideDone:true,body:`<p class="muted" style="margin:0 4px 12px">${T.applePayHelp}</p>
   ${field('1 · URL',url,'u1')}${field('2 · Header: apikey',CFG.key,'u2')}${field('3 · JSON: p_token',data.token,'u3')}
-  <div class="bcard"><div class="head" style="margin-bottom:6px">4 · JSON</div><div class="muted" style="font-size:14px;direction:ltr;text-align:left">p_amount → Amount<br>p_merchant → Merchant</div></div>
+  <div class="bcard"><div class="head" style="margin-bottom:6px">4 · JSON</div><div class="muted" style="font-size:14px;direction:ltr;text-align:left">p_text → Shortcut Input (Message)</div></div>
+  <div class="bcard"><div class="head" style="margin-bottom:6px">🧪 ${T.smsTest}</div><textarea id="smsT" rows="3" style="width:100%;border:0;border-radius:12px;background:var(--soft);padding:10px;font:inherit;direction:ltr" placeholder="Transaction of AED 2.00 debited from your a/c *296 at ..."></textarea><div id="smsR" class="muted" style="margin-top:6px;font-size:14px"></div></div>
   <button class="bigbtn ghost" id="nt">${T.newToken}</button>`,
   open(ov,close){
+   const st=ov.querySelector('#smsT');st.oninput=()=>{const p=parseBankSms(st.value);ov.querySelector('#smsR').textContent=!st.value.trim()?'':p?`✅ ${p.type==='income'?T.incomeOne:T.expense} · ${nf(p.amount)} · ${p.merchant||'—'}`:`❌ ${T.smsNotTx}`};
    ov.querySelector('.shb').addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;try{await navigator.clipboard.writeText(ov.querySelector('#'+b.dataset.copy).textContent);toast(T.copied)}catch(_){}});
    ov.querySelector('#nt').onclick=async()=>{if(!confirm(T.newTokenQ))return;await CLOUD.from('inbox_tokens').delete().eq('user_id',cloudUser.id);close();applePaySheet()};
   }});
